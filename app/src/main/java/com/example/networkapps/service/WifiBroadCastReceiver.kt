@@ -35,7 +35,7 @@ class WifiBroadCastReceiver : BroadcastReceiver() {
         const val ACTION_BOOT_COMPLETED = "android.intent.action.BOOT_COMPLETED"
         private const val ACTION_START = "ACTION_START"
         const val HOUR_INTERVAL = 3600000 //* 2 // 2Hours
-        private const val TWO_MINUTE = 60000 * 2
+        private const val TEST_MINUTE = 60000 * 5
 
         private fun cancelAlarm(context: Context) {
             val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
@@ -45,31 +45,30 @@ class WifiBroadCastReceiver : BroadcastReceiver() {
 
         fun setupAlarm(context: Context, force: Boolean) {
             cancelAlarm(context)
+            Log.d("WifiBroadCastReceiver","Alarm set")
             val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
             val alarmIntent = getStartPendingIntent(context)
             var currentTime = System.currentTimeMillis()
             if (!force) {
-                currentTime += HOUR_INTERVAL.toLong()
+                currentTime += TEST_MINUTE.toLong()
             }
             val sdkInt = Build.VERSION.SDK_INT
-            when {
-                sdkInt < Build.VERSION_CODES.KITKAT -> alarmManager.set(
+            if (sdkInt < Build.VERSION_CODES.KITKAT) alarmManager.set(
+                AlarmManager.RTC_WAKEUP,
+                currentTime,
+                alarmIntent
+            )
+            else if ((Build.VERSION_CODES.KITKAT <= sdkInt) && sdkInt < Build.VERSION_CODES.M) alarmManager.setExact(
+                AlarmManager.RTC_WAKEUP,
+                currentTime,
+                alarmIntent
+            )
+            else if (sdkInt >= Build.VERSION_CODES.M) {
+                alarmManager.setExactAndAllowWhileIdle(
                     AlarmManager.RTC_WAKEUP,
                     currentTime,
                     alarmIntent
                 )
-                (Build.VERSION_CODES.KITKAT <= sdkInt) && sdkInt < Build.VERSION_CODES.M -> alarmManager.setExact(
-                    AlarmManager.RTC_WAKEUP,
-                    currentTime,
-                    alarmIntent
-                )
-                sdkInt >= Build.VERSION_CODES.M -> {
-                    alarmManager.setExactAndAllowWhileIdle(
-                        AlarmManager.RTC_WAKEUP,
-                        currentTime,
-                        alarmIntent
-                    )
-                }
             }
         }
 

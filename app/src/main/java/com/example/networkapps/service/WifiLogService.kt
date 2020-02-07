@@ -27,7 +27,7 @@ import retrofit2.Response
 import java.text.SimpleDateFormat
 import java.util.*
 
-class WifiLogService: IntentService("WifiLogService") {
+class WifiLogService : IntentService("WifiLogService") {
 
     private lateinit var wakeLock: PowerManager.WakeLock
     private var imei = "Not available"
@@ -67,11 +67,15 @@ class WifiLogService: IntentService("WifiLogService") {
     private fun uploadWifiInfo(intent: Intent) {
         val wifiManager = applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
 
-        val phoneStatePermission = ContextCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE)
-        val locationPermission = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
-        Log.d(TAG,"Permission ${phoneStatePermission == PackageManager.PERMISSION_GRANTED && locationPermission == PackageManager.PERMISSION_GRANTED}")
+        val phoneStatePermission =
+            ContextCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE)
+        val locationPermission =
+            ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+        Log.d(
+            TAG,
+            "Permission ${phoneStatePermission == PackageManager.PERMISSION_GRANTED && locationPermission == PackageManager.PERMISSION_GRANTED}"
+        )
         if (phoneStatePermission == PackageManager.PERMISSION_GRANTED && locationPermission == PackageManager.PERMISSION_GRANTED) {
-            Log.d(TAG,"uploadWifiInfo Called")
 
             wifiManager?.let {
                 val wifiList = it.scanResults
@@ -85,7 +89,6 @@ class WifiLogService: IntentService("WifiLogService") {
                     infoList.add(map)
                 }
 
-
                 val telephonyManager =
                     applicationContext.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
 
@@ -98,9 +101,12 @@ class WifiLogService: IntentService("WifiLogService") {
                 }
                 val gson = GsonBuilder().create()
                 sendLog(imei, gson.toJson(infoList))
-
             }
         }
+
+        /* reset the alarm */
+        WifiBroadCastReceiver.setupAlarm(this, false)
+        Log.d(TAG, "Alarm Reset ")
 
     }
 
@@ -112,7 +118,6 @@ class WifiLogService: IntentService("WifiLogService") {
     }
 
     private fun sendLog(imei: String, wifiInformation: String) {
-        Log.d(TAG, "wifiInformation: $wifiInformation")
         val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
         val currentDateTime = sdf.format(Date())
         ApiUtils.getAPIService().logWifiData(imei, wifiInformation, currentDateTime)
@@ -132,10 +137,6 @@ class WifiLogService: IntentService("WifiLogService") {
                     )
                 }
             })
-
-        /* reset the alarm */
-        WifiBroadCastReceiver.setupAlarm(this, false)
-        Log.d(TAG, "Alarm Reset ")
     }
 
     fun showNotification(context: Context, deviceInfo: DeviceInfo?, requestCode: Int) {
