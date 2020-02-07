@@ -100,45 +100,54 @@ class MainActivity : AppCompatActivity() {
     @SuppressLint("HardwareIds")
     private fun showNetworkInfo() {
 
-        val wifiManager = applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
+        val phoneStatePermission =
+            ContextCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE)
+        val locationPermission =
+            ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+        if (phoneStatePermission == PackageManager.PERMISSION_GRANTED && locationPermission == PackageManager.PERMISSION_GRANTED) {
+            val wifiManager = applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
 
-        wifiManager?.let { it ->
+            wifiManager?.let { it ->
 
-            val wifiList = it.scanResults
-            val infoList = arrayListOf<HashMap<String, String>>()
-            for (scanResult in wifiList) {
+                val wifiList = it.scanResults
+                val infoList = arrayListOf<HashMap<String, String>>()
+                for (scanResult in wifiList) {
 
-                val map = HashMap<String, String>()
+                    val map = HashMap<String, String>()
 
-                val level = WifiManager.calculateSignalLevel(scanResult.level, 5)
-                map["bssid"] = scanResult.BSSID
-                map["ssid"] = scanResult.SSID
-                map["level"] = level.toString()
-                infoList.add(map)
-            }
+                    val level = WifiManager.calculateSignalLevel(scanResult.level, 5)
+                    map["bssid"] = scanResult.BSSID
+                    map["ssid"] = scanResult.SSID
+                    map["level"] = level.toString()
+                    infoList.add(map)
+                }
 
-            if (ContextCompat.checkSelfPermission(
-                    this,
-                    Manifest.permission.READ_PHONE_STATE
-                ) == PackageManager.PERMISSION_GRANTED
-            ) {
-                val telephonyManager =
-                    applicationContext.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
+                if (ContextCompat.checkSelfPermission(
+                        this,
+                        Manifest.permission.READ_PHONE_STATE
+                    ) == PackageManager.PERMISSION_GRANTED
+                ) {
+                    val telephonyManager =
+                        applicationContext.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
 
-                telephonyManager?.let { telephoneManager ->
-                    imei = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                        telephoneManager.imei
-                    } else {
-                        telephoneManager.deviceId
+                    telephonyManager?.let { telephoneManager ->
+                        imei = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                            telephoneManager.imei
+                        } else {
+                            telephoneManager.deviceId
+                        }
                     }
                 }
+
+
+                val gson = GsonBuilder().create()
+                sendLog(imei, gson.toJson(infoList))
+                setDialog(true, getString(R.string.loading))
             }
-
-
-            val gson = GsonBuilder().create()
-            sendLog(imei, gson.toJson(infoList))
-            setDialog(true, getString(R.string.loading))
+        }else{
+            tv_post_response.text = getString(R.string.permission_message)
         }
+
     }
 
     private fun sendLog(imei: String, wifiInformation: String) {
